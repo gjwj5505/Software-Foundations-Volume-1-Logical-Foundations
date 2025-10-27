@@ -1,0 +1,44 @@
+Tactic
+
+simpl in *	모든 가정과 목표를 단순화
+unfold f in *	정의 f를 전개
+red	논리연산자 정의를 펼침
+rewrite (H _ _) in H'	가정 H의 등식을 H'에 적용
+replace (old) with (new)	목표식 일부 교체
+apply H with (_ := _) _	가정을 다른 곳에 적용
+eapply	필요한 전제를 나중에 채움
+f_equal	함수 적용 인자가 같음을 증명
+specialize (H t)	전제 가정을 구체화
+assert (P)	보조 정리 추가
+assert (EQ: H = H) by reflexivity	가정 복사용 트릭
+destruct EQ	등식 가정 분해
+exfalso	목표를 False로 바꿔 모순 증명
+eexists	존재형 목표를 나중에 채움
+split	∧ 형태를 나눔
+revert H	가정을 목표 전제로 이동
+remember t as x eqn:Heq	항을 이름으로 고정
+pose (p := expr)	새 정의 도입
+set (x := expr) in *	새 정의를 식에 적용
+change (old) with (new)	동일한 형태 변경
+induction n; intros	귀납 수행 후 변수 도입
+dependent destruction H	의존형 구조분해 안전하게 수행
+inversion H	등식 구조로 경우 나눔
+subst	등식 가정 대입
+injection H	구조적 injectivity 이용
+eq_refl	자기 자신과 같음
+eq_ind	eq의 귀납 원리
+Search pattern	정리/전제 탐색
+Print f	정의 내용 확인
+eauto	자동 전개
+@	명시적 인자 전달
+Check @injective	함수의 injectivity 체크
+
+
+B. 이론적 / 논리적 내용 
+P -> ~~P	직관논리에서도 성립
+~~P -> P	직관논리에서는 불가 (고전논리 필요)
+p \/ ~p <-> ~~p -> p	고전논리에서 동치
+Prop ⊂ Type ⊂ Type₁	유니버스 계층
+Prop은 match 불가	계산 불가능한 증명객체
+Universe inconsistency	유니버스 충돌 경고
+setoid	= 대신 사용자 정의 동치 사용

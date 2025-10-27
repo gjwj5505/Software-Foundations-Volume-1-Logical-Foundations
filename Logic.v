@@ -1000,6 +1000,38 @@ Qed.
     _inductively_ -- a different technique with its own strengths and
     limitations. *)
 
+(** **** Exercise: 2 stars, standard (In_map_iff) *)
+Theorem In_map_iff :
+  forall (A B : Type) (f : A -> B) (l : list A) (y : B),
+    In y (map f l) <->
+    exists x, f x = y /\ In x l.
+Proof.
+  intros A B f l y. split.
+  - induction l as [|x l' IHl'].
+    + intros H. simpl in H. inversion H.
+    + intros H. simpl in H.
+      destruct H.
+      -- exists x. split.
+        ++ apply H.
+        ++ simpl. left. reflexivity.
+      -- apply IHl' in H.
+        destruct H. exists x0. split. 
+        ++ destruct H. apply H.
+        ++ destruct H. simpl. right. apply H0.
+  - induction l as [|x l' IHl'].
+    + intros [x [fxy inxn]]. inversion inxn.
+    + intros [z [fzy inzn]]. simpl. simpl in inzn.
+      destruct inzn as [xz | inzl].
+      -- left. rewrite xz. apply fzy.
+      --  right. assert (IHl'H : (exists x : A, f x = y /\ In x l')).
+          {
+            exists z. split.
+            ++ apply fzy.
+            ++ apply inzl. 
+          }
+          apply IHl' in IHl'H. apply IHl'H.
+Qed.
+
 (** **** Exercise: 2 stars, standard (In_app_iff) *)
 Theorem In_app_iff : forall A l l' (a:A),
   In a (l++l') <-> In a l \/ In a l'.
@@ -1094,13 +1126,14 @@ Qed.
     return a property [P] such that [P n] is equivalent to [Podd n] when
     [n] is [odd] and equivalent to [Peven n] otherwise. *)
 
+Search even.
+
 Definition combine_odd_even (Podd Peven : nat -> Prop) : nat -> Prop :=
-  forall n : nat,
-    if even n = true
-    then Peven n
-    else Podd n.
+  fun n : nat =>
+    (odd n = true -> Podd n) /\ (~ (odd n = true) -> Peven n).
 
 (** To test your definition, prove the following facts: *)
+
 
 Theorem combine_odd_even_intro :
   forall (Podd Peven : nat -> Prop) (n : nat),
@@ -1108,7 +1141,27 @@ Theorem combine_odd_even_intro :
     (odd n = false -> Peven n) ->
     combine_odd_even Podd Peven n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  assert (Heoro : forall n : nat, (odd n = true -> False) -> (odd n = false)).
+  {
+    intros n. induction n as [| n' IHn'].
+    - intros H. unfold odd. simpl. reflexivity.
+    - intros H. unfold odd. simpl.
+      destruct n' as [| n''] eqn:Dn'n''.
+      + unfold odd in *. simpl in H. assert (Htt: true = true). {reflexivity. }
+        apply H in Htt. destruct Htt.
+      + unfold odd in *. simpl in H. assert (Htt: true = true). {reflexivity. }
+        destruct (negb (even n'')) eqn:Dx.
+          -- apply H in Htt. destruct Htt.
+          -- reflexivity. 
+  }
+  intros Podd Peven n.
+  intros Ho He.
+  unfold combine_odd_even.
+  split.
+  - intros Hot. apply Ho. apply Hot. 
+  - intros Hont. apply He. unfold not in Hont.
+    apply Heoro in Hont. apply Hont.
+Qed.
 
 Theorem combine_odd_even_elim_odd :
   forall (Podd Peven : nat -> Prop) (n : nat),
@@ -1116,7 +1169,13 @@ Theorem combine_odd_even_elim_odd :
     odd n = true ->
     Podd n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros Podd Peven n.
+  intros Hcomb Hot.
+  unfold combine_odd_even in Hcomb.
+  destruct Hcomb as [HPot HPont].
+  apply HPot in Hot.
+  apply Hot.
+Qed.
 
 Theorem combine_odd_even_elim_even :
   forall (Podd Peven : nat -> Prop) (n : nat),
@@ -1124,7 +1183,14 @@ Theorem combine_odd_even_elim_even :
     odd n = false ->
     Peven n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros Podd Peven n Hcomb Hof.
+  unfold combine_odd_even in *.
+  destruct Hcomb as [HPot HPont].
+  destruct (odd n) eqn:Dn.
+  - inversion Hof.
+  - assert (false <> true). {unfold not. intros H. inversion H. }
+    apply HPont in H. apply H.
+Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -1318,6 +1384,8 @@ Example lemma_application_ex :
     n = 0.
 Proof.
   intros n ns H.
+  Print proj1.
+  Print In_map_iff.
   destruct (proj1 _ _ (In_map_iff _ _ _ _ _) H)
            as [m [Hm _]].
   rewrite mul_0_r in Hm. rewrite <- Hm. reflexivity.
