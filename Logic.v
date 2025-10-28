@@ -1967,6 +1967,7 @@ Proof.
   apply add_comm.
 Qed.
 
+
 (** Naturally, we need to be quite careful when adding new axioms into
     Coq's logic, as this can render it _inconsistent_ -- that is, it may
     become possible to prove every proposition, including [False], [2+2=5],
@@ -2022,7 +2023,26 @@ Definition tr_rev {X} (l : list X) : list X :=
 
 Theorem tr_rev_correct : forall X, @tr_rev X = @rev X.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros X.
+  apply functional_extensionality.
+  intros l.
+  induction l as [| h t IHl].
+  - unfold tr_rev. simpl. easy. 
+  - simpl. rewrite <- IHl. unfold tr_rev. simpl.
+    assert (rev_append_nil : forall {X' : Type} (l1 l2 l3 : list X'), 
+            rev_append l1 (l2 ++ l3) = rev_append l1 l2 ++ l3).
+    {
+      intros X'.
+      intros l1. induction l1 as [| h1 t1 IHl1]; intros l2 l3.  
+      - simpl. easy.
+      - simpl. replace (h1 :: l2 ++ l3) with ((h1 :: l2) ++ l3).
+        + rewrite IHl1. easy.
+        + simpl. easy.
+    }
+    replace (rev_append t [h]) with (rev_append t ([] ++ [h])).
+    + rewrite rev_append_nil. easy.
+    + easy.
+Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -2153,7 +2173,15 @@ Qed.
 Theorem excluded_middle_irrefutable: forall (P : Prop),
   ~ ~ (P \/ ~ P).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  Set Printing Parentheses.
+  intros P.
+  unfold not.
+  intros H.
+  assert (popf : P \/ (P -> False)).
+  {
+    
+  }
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (not_exists_dist)
