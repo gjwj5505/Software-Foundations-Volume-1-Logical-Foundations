@@ -310,7 +310,7 @@ Proof.
 Qed.
 (** [] *)
 
-(** **** Exercise: 2 stars, standard, optional (even_S)
+(** **** Exercise: 2 stars, standard, optional (;)
 
     One inconvenient aspect of our definition of [even n] is the
     recursive call on [n - 2]. This makes proofs about [even n]

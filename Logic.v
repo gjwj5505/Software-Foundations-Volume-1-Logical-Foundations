@@ -1378,18 +1378,29 @@ Qed.
     how this proof works are not critical -- the goal here is just to
     illustrate applying theorems to arguments.) *)
 
+
+    
+(* Lemma proj1 : forall P Q : Prop,
+  P /\ Q -> P.
+
+Theorem In_map_iff :
+  forall (A B : Type) (f : A -> B) (l : list A) (y : B),
+    In y (map f l) <->
+    exists x, f x = y /\ In x l. *)
+
+
 Example lemma_application_ex :
   forall {n : nat} {ns : list nat},
     In n (map (fun m => m * 0) ns) ->
-    n = 0.
+    n = 0.  
 Proof.
   intros n ns H.
-  Print proj1.
-  Print In_map_iff.
-  destruct (proj1 _ _ (In_map_iff _ _ _ _ _) H)
+  destruct ((proj1 _ _ (In_map_iff nat nat (fun m => m * 0) ns n)) H)
            as [m [Hm _]].
   rewrite mul_0_r in Hm. rewrite <- Hm. reflexivity.
 Qed.
+
+Print lemma_application_ex.
 
 (** We will see many more examples in later chapters. *)
 
@@ -1465,8 +1476,35 @@ Qed.
 Lemma even_double_conv : forall n, exists k,
   n = if even n then double k else S (double k).
 Proof.
-  (* Hint: Use the [even_S] lemma from [Induction.v]. *)
-  (* FILL IN HERE *) Admitted.
+  assert (es := even_S).
+  intros n. induction n as [| n' IHn'].
+  - exists 0. simpl. reflexivity.
+  - destruct (even (S n')) eqn:Desn'.
+    + rewrite es in Desn'. unfold negb in Desn'.
+      assert (n'odd: even n' = false).
+      {
+        destruct (even n').
+        -- inversion Desn'.
+        -- reflexivity.
+      }
+      destruct IHn' as [k n'k].
+      rewrite n'odd in n'k.
+      exists (S k).
+      rewrite n'k.
+      simpl. reflexivity.
+    + rewrite es in Desn'. unfold negb in Desn'.
+      assert (n'odd: even n' = true).
+      {
+        destruct (even n').
+        -- reflexivity.
+        -- inversion Desn'.
+      }
+      destruct IHn' as [k n'k].
+      rewrite n'odd in n'k.
+      exists k.
+      rewrite n'k.
+      reflexivity.
+Qed.
 (** [] *)
 
 (** Now the main theorem: *)
@@ -1639,12 +1677,38 @@ Qed.
 Theorem andb_true_iff : forall b1 b2:bool,
   b1 && b2 = true <-> b1 = true /\ b2 = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros b1 b2.
+  split.
+  - intros b1b2.
+    destruct b1; destruct b2.
+    + split. reflexivity. reflexivity.
+    + simpl in b1b2. inversion b1b2.
+    + simpl in b1b2. inversion b1b2.
+    + simpl in b1b2. inversion b1b2.
+  - intros b1b2.
+    destruct b1b2 as [b1t b2t].
+    rewrite b1t. rewrite b2t. reflexivity.
+Qed. 
 
+Search (_ || _).
 Theorem orb_true_iff : forall b1 b2,
   b1 || b2 = true <-> b1 = true \/ b2 = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros b1 b2.
+  split.
+  - intros b1b2.
+    destruct b1; destruct b2.
+    + left. reflexivity.
+    + left. reflexivity.
+    + right. reflexivity.
+    + simpl in b1b2. inversion b1b2.
+  - intros b1b2.
+    destruct b1b2 as [b1t | b2t].
+    + rewrite b1t. reflexivity.
+    + rewrite b2t. destruct b1.
+      -- reflexivity.
+      -- reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, standard (eqb_neq)
@@ -1653,10 +1717,34 @@ Proof.
     [eqb_eq] that is more convenient in certain situations.  (We'll see
     examples in later chapters.)  Hint: [not_true_iff_false]. *)
 
+    
+(* Lemma not_true_iff_false : forall b,
+  b <> true <-> b = false.
+
+Theorem eqb_eq : forall n1 n2 : nat,
+  n1 =? n2 = true <-> n1 = n2. *)
+
 Theorem eqb_neq : forall x y : nat,
   x =? y = false <-> x <> y.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros x y.
+  split.
+  - rewrite <- not_true_iff_false.
+    intros xneqy.
+    unfold not.
+    intros xeqy.
+    rewrite xeqy in xneqy.
+    unfold not in xneqy.
+    assert (yeqy := eqb_refl y).
+    apply xneqy in yeqy. inversion yeqy.
+  - rewrite <- not_true_iff_false.
+    intros xneqy.
+    unfold not in *.
+    intros xeqy.
+    assert (xeqby := eqb_eq x y).
+    apply xeqby in xeqy.
+    apply xneqy in xeqy. inversion xeqy.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (eqb_list)
@@ -1668,15 +1756,70 @@ Proof.
     definition is correct, prove the lemma [eqb_list_true_iff]. *)
 
 Fixpoint eqb_list {A : Type} (eqb : A -> A -> bool)
-                  (l1 l2 : list A) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+                  (l1 l2 : list A) : bool :=
+  match l1, l2 with
+  | [], [] => true
+  | h1 :: t1, h2 :: t2 => (eqb h1 h2) && (eqb_list eqb t1 t2)
+  | _, _ => false
+  end.
 
 Theorem eqb_list_true_iff :
   forall A (eqb : A -> A -> bool),
     (forall a1 a2, eqb a1 a2 = true <-> a1 = a2) ->
     forall l1 l2, eqb_list eqb l1 l2 = true <-> l1 = l2.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros A eqb.
+  intros eqb_well_defined.
+  intros l1.
+  induction l1 as [| h1 t1 IHl1];  intros l2.
+  - split.
+    + intros eqb_t.
+      destruct l2.
+      -- reflexivity.
+      -- simpl in eqb_t. inversion eqb_t.
+    + intros l2nil.
+      rewrite <- l2nil. simpl. reflexivity.
+  - split.
+    + intros l1eqbl2.
+      destruct l2 as [| h2 t2] eqn:Dl2.
+      --  simpl in l1eqbl2. inversion l1eqbl2.  
+      --  subst. simpl in l1eqbl2.
+          assert (eqbh1h2 : eqb h1 h2 = true). 
+          {
+            destruct (eqb h1 h2). reflexivity. 
+            simpl in l1eqbl2. inversion l1eqbl2.
+          }
+          assert (eqbt1t2 : eqb_list eqb t1 t2 = true). 
+          {
+            destruct (eqb_list eqb t1 t2). reflexivity. 
+            destruct (eqb h1 h2).
+            ++ simpl in l1eqbl2. inversion l1eqbl2.
+            ++ simpl in l1eqbl2. inversion l1eqbl2.
+          }
+          apply eqb_well_defined in eqbh1h2.
+          apply IHl1 in eqbt1t2.
+          rewrite eqbh1h2.
+          rewrite eqbt1t2.
+          reflexivity.
+    + intros l1eqbl2.
+      destruct l2 as [| h2 t2] eqn:Dl2.
+      --  inversion l1eqbl2.
+      --  rewrite <- l1eqbl2.
+          simpl.
+          assert (eqbh1h1 : eqb h1 h1 = true).
+          {
+            rewrite eqb_well_defined with (a1 := h1) (a2 := h1).
+            reflexivity.
+          }
+          assert (eqb_listt1t1 : eqb_list eqb t1 t1 = true).
+          {
+            rewrite IHl1 with (l2 := t1).
+            reflexivity.
+          }
+          rewrite eqbh1h1.
+          rewrite eqb_listt1t1.
+          reflexivity.
+Qed.
 
 (** [] *)
 
@@ -1688,13 +1831,48 @@ Proof.
 
 (** Copy the definition of [forallb] from your [Tactics] here
     so that this file can be graded on its own. *)
-Fixpoint forallb {X : Type} (test : X -> bool) (l : list X) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+
+Fixpoint forallb {X : Type} (test : X -> bool) (l : list X) : bool :=
+  match l with
+  | [] => true
+  | h :: t => (test h) && (forallb test t)
+  end.
+
+
+(* Fixpoint All {T : Type} (P : T -> Prop) (l : list T) : Prop :=
+  match l with
+  | [] => True
+  | x :: l' => (P x ) /\ (All P l')
+  end. *)
 
 Theorem forallb_true_iff : forall X test (l : list X),
   forallb test l = true <-> All (fun x => test x = true) l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X test l.
+  induction l as [| h t IHl'].
+  - split. 
+    + intros. simpl. easy.
+    + intros. simpl. easy.
+  - split.
+    + intros Hforall.
+      simpl in Hforall.
+      destruct (test h) eqn:Dth; destruct (forallb test t) eqn:Dtt.
+      --  simpl. split.
+        ++  apply Dth.
+        ++  assert (truetrue : true = true) by reflexivity.
+            apply IHl' in truetrue.
+            apply truetrue.
+      -- discriminate Hforall.
+      -- discriminate Hforall.
+      -- discriminate Hforall.
+    + intros Hall.
+      simpl.
+      simpl in Hall.
+      destruct Hall as [th allt].
+      apply IHl' in allt.
+      rewrite th. rewrite allt. easy.
+Qed. 
+
 
 (** (Ungraded thought question) Are there any important properties of
     the function [forallb] which are not captured by this

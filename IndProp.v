@@ -137,14 +137,23 @@ Fail Fixpoint Collatz_holds_for (n : nat) : Prop :=
 (** Formally in Coq, the [Collatz_holds_for] property is
     _inductively defined_: *)
 
+Inductive chf : nat -> Type :=
+  | A : nat -> chf 0
+  | B (x : nat) : chf 2
+  .
+
 Inductive Collatz_holds_for : nat -> Prop :=
-  | Chf_one : Collatz_holds_for 1
-  | Chf_even (n : nat) : even n = true ->
+  | Chf_one  : Collatz_holds_for 1
+  | Chf_even : forall n : nat, even n = true ->
                          Collatz_holds_for (div2 n) ->
                          Collatz_holds_for n
   | Chf_odd (n : nat) :  even n = false ->
                          Collatz_holds_for ((3 * n) + 1) ->
                          Collatz_holds_for n.
+
+
+
+              
 
 (** What we've done here is to use Coq's [Inductive] definition
     mechanism to characterize the property "Collatz holds for..." by
