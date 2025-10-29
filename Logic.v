@@ -1967,7 +1967,6 @@ Proof.
   apply add_comm.
 Qed.
 
-
 (** Naturally, we need to be quite careful when adding new axioms into
     Coq's logic, as this can render it _inconsistent_ -- that is, it may
     become possible to prove every proposition, including [False], [2+2=5],
@@ -2023,26 +2022,7 @@ Definition tr_rev {X} (l : list X) : list X :=
 
 Theorem tr_rev_correct : forall X, @tr_rev X = @rev X.
 Proof.
-  intros X.
-  apply functional_extensionality.
-  intros l.
-  induction l as [| h t IHl].
-  - unfold tr_rev. simpl. easy. 
-  - simpl. rewrite <- IHl. unfold tr_rev. simpl.
-    assert (rev_append_nil : forall {X' : Type} (l1 l2 l3 : list X'), 
-            rev_append l1 (l2 ++ l3) = rev_append l1 l2 ++ l3).
-    {
-      intros X'.
-      intros l1. induction l1 as [| h1 t1 IHl1]; intros l2 l3.  
-      - simpl. easy.
-      - simpl. replace (h1 :: l2 ++ l3) with ((h1 :: l2) ++ l3).
-        + rewrite IHl1. easy.
-        + simpl. easy.
-    }
-    replace (rev_append t [h]) with (rev_append t ([] ++ [h])).
-    + rewrite rev_append_nil. easy.
-    + easy.
-Qed.
+(* FILL IN HERE *) Admitted.
 (** [] *)
 
 (* ================================================================= *)
@@ -2173,14 +2153,14 @@ Qed.
 Theorem excluded_middle_irrefutable: forall (P : Prop),
   ~ ~ (P \/ ~ P).
 Proof.
-  Set Printing Parentheses.
   intros P.
-  unfold not.
-  intros H.
-  assert (popf : P \/ (P -> False)).
-  {
-    
-  }
+  Set Printing Parentheses.
+  intro nPonP.
+  assert (dmno := de_morgan_not_or).
+  specialize dmno with (P := P) (Q := not P).
+  apply dmno in nPonP.
+  destruct nPonP as [nP nnP].
+  apply nnP in nP. destruct nP.
 Qed.
 (** [] *)
 
@@ -2202,7 +2182,21 @@ Theorem not_exists_dist :
   forall (X:Type) (P : X -> Prop),
     ~ (exists x, ~ P x) -> (forall x, P x).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros exm X P.
+  intros nexnPx.
+  intros x.
+  unfold not in *.
+  unfold excluded_middle in exm.
+  specialize exm with (P := (P x)).
+  destruct exm as [Px | nPx].
+  - apply Px.
+  - assert (exnPx : (exists x : X, ((P x) -> False))).
+    {
+      exists x. apply nPx. 
+    }
+    apply nexnPx in exnPx.
+    destruct exnPx.
+Qed.
 (** [] *)
 
 (** **** Exercise: 5 stars, standard, optional (classical_axioms)
@@ -2221,6 +2215,10 @@ Proof.
     prove a single circular chain of implications that connects them
     all. *)
 
+(*
+Definition excluded_middle := forall P : Prop,
+  P \/ ~ P. *)
+
 Definition peirce := forall P Q: Prop,
   ((P -> Q) -> P) -> P.
 
@@ -2235,6 +2233,90 @@ Definition implies_to_or := forall P Q:Prop,
 
 Definition consequentia_mirabilis := forall P:Prop,
   (~P -> P) -> P.
+
+
+
+
+
+
+Theorem excluded_middle_implies_peirce :
+  excluded_middle -> peirce.
+Proof.
+  unfold excluded_middle. unfold peirce.
+  intros exm.
+  intros P Q.
+  intros PQP.
+  assert (PonP := exm P).
+  destruct PonP.
+  - easy.
+  - assert (PQ : P -> Q).
+    {
+      intros HP.
+      apply H in HP. destruct HP.
+    }
+    apply PQP in PQ. apply PQ.
+Qed.
+
+Theorem peirce_implies_consequentia_mirabilis : 
+  peirce -> consequentia_mirabilis.
+Proof.
+  unfold peirce. unfold consequentia_mirabilis.
+  intros pr P nPtoP.
+  apply pr in nPtoP. apply nPtoP.
+Qed.
+
+Theorem consequentia_mirabilis_impies_implies_to_or : 
+  consequentia_mirabilis -> implies_to_or.
+Proof.
+  unfold consequentia_mirabilis. unfold implies_to_or.
+  intros csm P Q PtoQ.
+  apply csm.
+  intros nnPonQ.
+  unfold not in nnPonQ.
+  left.
+  intros HP.
+  apply PtoQ in HP as HQ.
+  apply nnPonQ.
+  right.
+  apply HQ.
+Qed.
+
+Theorem implies_to_or_implies_double_negation_elimination :
+  implies_to_or -> double_negation_elimination.
+Proof.
+  unfold implies_to_or. unfold double_negation_elimination.
+  intros ito P nnP.
+  specialize ito with (P := P) (Q := P) as itoPP.
+  assert (PP : P -> P). {intros HP. apply HP. }
+  apply itoPP in PP as nPoP.
+  destruct nPoP as [nP | HP].
+  - apply nnP in nP. destruct nP.
+  - apply HP.
+Qed.
+
+Theorem double_negation_elimination_implies_de_morgan_not_and_not :
+  double_negation_elimination -> de_morgan_not_and_not.
+Proof.
+  unfold double_negation_elimination. unfold de_morgan_not_and_not.
+  intros dne P Q nnPanQ.
+  apply dne.
+  intros nPoQ.
+  apply de_morgan_not_or in nPoQ.
+  apply nnPanQ in nPoQ. destruct nPoQ.
+Qed.
+
+Theorem de_morgan_not_and_not_implies_excluded_middle :
+  de_morgan_not_and_not -> excluded_middle.
+Proof.
+  unfold de_morgan_not_and_not. unfold excluded_middle.
+  intros dmnan P.
+  apply dmnan.
+  intros [nP nnP].
+  apply nnP in nP.
+  destruct nP.
+Qed.
+
+
 
 (* FILL IN HERE
 
