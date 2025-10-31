@@ -2237,8 +2237,6 @@ Definition consequentia_mirabilis := forall P:Prop,
 
 
 
-
-
 Theorem excluded_middle_implies_peirce :
   excluded_middle -> peirce.
 Proof.
@@ -2315,6 +2313,7 @@ Proof.
   apply nnP in nP.
   destruct nP.
 Qed.
+
 
 
 

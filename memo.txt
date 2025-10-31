@@ -22,7 +22,7 @@ set (x := expr) in *	새 정의를 식에 적용
 change (old) with (new)	동일한 형태 변경
 induction n; intros	귀납 수행 후 변수 도입
 dependent destruction H	의존형 구조분해 안전하게 수행
-inversion H	등식 구조로 경우 나눔
+inversion H	등식 구조로 경우 나눔                      destruct + discriminate + inversion + ???
 subst	등식 가정 대입
 injection H	구조적 injectivity 이용
 eq_refl	자기 자신과 같음
@@ -42,3 +42,13 @@ Prop ⊂ Type ⊂ Type₁	유니버스 계층
 Prop은 match 불가	계산 불가능한 증명객체
 Universe inconsistency	유니버스 충돌 경고
 setoid	= 대신 사용자 정의 동치 사용
+
+
+
+1~n-1에 대해 모두 사용해야 하는 귀납법 해보기
+
+Collatz 두가지 증명 동치임을 증명해보기 le, even도
+transitivity 1 - (n-1) 구조랑 n - m 구조 같은것도 증명 가능?
+rename? assert? remember?
+
+inductively 정의된 명제를 induction으로 분해하기 (Lemma ev_Even)
